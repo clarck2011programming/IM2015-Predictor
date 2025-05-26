@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IM2015 PREDICTOR</title>
+  <style>
+    /* ----------------------------------------------
+       GLOBAL RESET & BODY BACKGROUND
+       ---------------------------------------------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    /* A diagonal teal→green gradient, matching your mockup */
+    body {
+      background: linear-gradient(
+        135deg,
+        #7fffd4 0%,
+        #00ff7f 100%
+      );
+      position: relative;
+    }
+
+    /* ----------------------------------------------
+       TITLE TEXT “IM2015 PREDICTOR”
+       ---------------------------------------------- */
+    .title {
+      position: absolute;
+      top: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #ff69b4; /* Pinkish fill */
+      /* Purple/blue glow */
+      text-shadow: 0 0 8px #8a2be2, 0 0 12px #00ffff;
+    }
+
+    /* ----------------------------------------------
+       RESULT BOX (initially hidden)
+       ---------------------------------------------- */
+    .result-box {
+      position: absolute;
+      top: 100px;           /* Will animate from scaleY(0) → scaleY(1) */
+      left: 50%;
+      transform: translateX(-50%) scaleY(0);
+      transform-origin: top;
+      width: 80%;
+      max-width: 600px;
+      background: #0000cd; /* RoyalBlue (close to your solid-blue) */
+      border-radius: 10px;
+      padding: 20px;
+      color: #ffa500;      /* Orange text */
+      font-size: 1.2rem;
+      text-align: center;
+      transition: transform 0.5s ease;
+    }
+    .result-box.visible {
+      transform: translateX(-50%) scaleY(1);
+    }
+    .result-box .result-header {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+    }
+    .result-box .result-line {
+      margin: 10px 0;
+    }
+
+    /* ----------------------------------------------
+       BIG CIRCLE “PREDICT” BUTTON
+       ---------------------------------------------- */
+    .circle {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: linear-gradient(
+        to bottom,
+        #6a5acd, /* SlateBlue top */
+        #ff69b4  /* HotPink bottom */
+      );
+      border: 6px solid #ffa500; /* Orange border */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: top 0.5s ease;
+      z-index: 2;
+    }
+    /* After click, move circle downward */
+    .circle.moved-down {
+      top: 65%;
+    }
+    .circle .circle-text {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #00ffff; /* Cyan */
+      text-shadow: 0 0 5px #00ff00; /* Neon-green glow */
+      user-select: none;
+    }
+
+    /* ----------------------------------------------
+       ARROW POINTING AT THE CIRCLE
+       ---------------------------------------------- */
+    .arrow-container {
+      position: absolute;
+      top: 60%;
+      left: 60%;
+      width: 150px;
+      height: 20px;
+      transform-origin: center;
+      /* rotate so that arrow points up‐left toward the circle: */
+      transform: rotate(-135deg);
+      animation: pulse 1s infinite ease-in-out;
+      z-index: 1;
+    }
+    /* The long rectangular “shaft” of the arrow */
+    .arrow-shaft {
+      width: 100%;
+      height: 100%;
+      background: #0000cd;   /* same blue as result box */
+      border: 2px solid #8a2be2; /* purple border */
+      border-radius: 4px;
+    }
+    /* The triangular arrowhead */
+    .arrow-head {
+      position: absolute;
+      top: -6px;
+      left: 100%;
+      width: 0;
+      height: 0;
+      border-top: 16px solid transparent;
+      border-bottom: 16px solid transparent;
+      border-left: 24px solid #0000cd;
+    }
+    /* The “CLICK” label on the arrow */
+    .arrow-text {
+      position: absolute;
+      top: -28px;
+      left: 30px;
+      transform: rotate(135deg); /* Keep text horizontal */
+      font-size: 1rem;
+      font-weight: bold;
+      color: #ffa500; /* Orange */
+      user-select: none;
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(1) rotate(-135deg); }
+      50%  { transform: scale(0.7) rotate(-135deg); }
+      100% { transform: scale(1) rotate(-135deg); }
+    }
+
+    /* ----------------------------------------------
+       BOTTOM FOOTER BANNERS
+       ---------------------------------------------- */
+    .footer-banner {
+      position: absolute;
+      bottom: 60px;
+      width: 100%;
+      text-align: center;
+      font-size: 1rem;
+      color: #ffa500; /* Orange text */
+      background: linear-gradient(
+        to right,
+        #6a5acd,
+        #ff69b4
+      );
+      padding: 10px 0;
+      text-transform: lowercase;
+      user-select: none;
+    }
+    .footer-credit {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #ffa500; /* Orange */
+      background: #0000cd; /* Blue pill-shape */
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TITLE AT TOP -->
+  <div class="title">IM2015 PREDICTOR</div>
+
+  <!-- RESULT BOX (hidden by default) -->
+  <div id="resultBox" class="result-box">
+    <div class="result-header">RESULT</div>
+    <div id="line1" class="result-line">(Even/Odd) - (Bulls Number)</div>
+    <div id="line2" class="result-line">ACCURACY RATE : (WINNING PERCENTAGE)</div>
+  </div>
+
+  <!-- BIG CIRCLE BUTTON -->
+  <div id="predictBtn" class="circle">
+    <div class="circle-text">PREDICT</div>
+  </div>
+
+  <!-- ARROW POINTING AT CIRCLE -->
+  <div class="arrow-container" id="arrow">
+    <div class="arrow-shaft"></div>
+    <div class="arrow-head"></div>
+    <div class="arrow-text">CLICK</div>
+  </div>
+
+  <!-- FOOTERS -->
+  <div class="footer-banner">
+    please do not sell these tools to anyone this tool is free
+  </div>
+  <div class="footer-credit">BY : XYVROUZE</div>
+
+  <script>
+    /***********************************************************************************
+      When the user clicks the big circle:
+      1) The arrow disappears.
+      2) The circle slides downward.
+      3) The blue result box “pops” open.
+      4) We compute:
+          - randomNum1, randomNum2 ∈ [1..89]
+          - currentMinutes = (new Date()).getMinutes()
+          - rawValue = (randomNum1 / randomNum2) + currentMinutes
+          - bullsNumber = (Math.floor(rawValue)) % 100
+          - isOdd = (bullsNumber % 10) ∈ {1,3,5,7,9} ? “Odd” : “Even”
+          - accuracy = random integer between 80 and 99
+          - Fill in the two lines inside the result box.
+    **********************************************************************************/
+    document.getElementById('predictBtn').addEventListener('click', function() {
+      var btn = this;
+      var arrow = document.getElementById('arrow');
+      var resultBox = document.getElementById('resultBox');
+
+      // 1) Hide the arrow
+      arrow.style.display = 'none';
+
+      // 2) Slide the circle downward
+      btn.classList.add('moved-down');
+
+      // 3) “Pop” open the result box after a tiny delay
+      setTimeout(function() {
+        resultBox.classList.add('visible');
+      }, 500);
+
+      // 4) Compute the two random integers from 1..89
+      var r1 = Math.floor(Math.random() * 89) + 1;
+      var r2 = Math.floor(Math.random() * 89) + 1;
+
+      // Current minute of the hour (0–59)
+      var now = new Date();
+      var minutes = now.getMinutes();
+
+      // Compute raw value: (r1 / r2) + minutes
+      var raw = (r1 / r2) + minutes;
+
+      // Bulls Number = integer part of raw, modulo 100
+      var bulls = Math.floor(raw) % 100;
+      if (bulls < 0) bulls = (bulls + 100) % 100;
+
+      // Determine Odd/Even based on the ones digit
+      var ones = bulls % 10;
+      var oddEven = (ones % 2 === 1) ? "Odd" : "Even";
+
+      // Random accuracy between 80% and 99%
+      var accuracy = Math.floor(Math.random() * 20) + 80; // [80..99]
+
+      // Update the RESULT BOX text
+      document.getElementById('line1').textContent = "(" + oddEven + ") - (Bulls Number: " + bulls + ")";
+      document.getElementById('line2').textContent = "ACCURACY RATE : " + accuracy + "%";
+    });
+  </script>
+</body>
+</html>
